@@ -46,12 +46,16 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <inttypes.h>
 #include <cstddef>
 
+#ifdef QCOM_BSP
+#define NEW_ION_API 1
+#endif
+
 static ptrdiff_t x;
 
 #ifdef _ANDROID_
 #ifdef USE_ION
 #include <linux/msm_ion.h>
-#ifndef NEW_ION_API
+#if !defined(ION_FLAG_CACHED) && defined(CACHED)
 #define ION_FLAG_CACHED CACHED
 #endif
 #endif
@@ -87,6 +91,9 @@ extern "C"{
 #if defined (_ANDROID_ICS_)
 #include <gralloc_priv.h>
 #include <IQService.h>
+#ifdef DISPLAYCAF
+#include <qdMetaData.h>
+#endif
 #endif
 
 #include <pthread.h>
@@ -163,6 +170,13 @@ extern "C" {
         & BITMASK_FLAG(mIndex))
 #define BITMASK_ABSENT(mArray,mIndex) (((mArray)[BITMASK_OFFSET(mIndex)] \
         & BITMASK_FLAG(mIndex)) == 0x0)
+
+//BitMask Management logic for U32
+#define BITMASK_CLEAR_U32(mArray,mIndex) ((mArray) & (~(BITMASK_FLAG(mIndex))))
+#define BITMASK_SET_U32(mArray,mIndex)  ((mArray) | BITMASK_FLAG(mIndex))
+#define BITMASK_PRESENT_U32(mArray,mIndex) ((mArray) & BITMASK_FLAG(mIndex))
+#define BITMASK_ABSENT_U32(mArray,mIndex) (((mArray) & BITMASK_FLAG(mIndex)) == 0x0)
+
 
 #define OMX_CORE_CONTROL_CMDQ_SIZE   100
 #define OMX_CORE_QCIF_HEIGHT         144
@@ -587,8 +601,18 @@ private:
     void handle_extradata(OMX_BUFFERHEADERTYPE *p_buf_hdr);
     OMX_ERRORTYPE enable_extradata(OMX_U32 requested_extradata, bool enable = true);
     void print_debug_extradata(OMX_OTHER_EXTRADATATYPE *extra);
+#ifdef DISPLAYCAF
+#ifdef _MSM8974_
     void append_interlace_extradata(OMX_OTHER_EXTRADATATYPE *extra,
                                     OMX_U32 interlaced_format_type);
+#else
+    void append_interlace_extradata(OMX_OTHER_EXTRADATATYPE *extra,
+                                    OMX_U32 interlaced_format_type, OMX_U32 buf_index);
+#endif
+#else
+    void append_interlace_extradata(OMX_OTHER_EXTRADATATYPE *extra,
+                                    OMX_U32 interlaced_format_type);
+#endif
     void append_frame_info_extradata(OMX_OTHER_EXTRADATATYPE *extra,
                                OMX_U32 num_conceal_mb,
                                OMX_U32 picture_type,
