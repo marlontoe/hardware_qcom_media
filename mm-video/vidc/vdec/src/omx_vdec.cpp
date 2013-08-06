@@ -3037,7 +3037,8 @@ OMX_ERRORTYPE  omx_vdec::get_parameter(OMX_IN OMX_HANDLETYPE     hComp,
 #else
                 if(secure_mode) {
                         nativeBuffersUsage->nUsage = (GRALLOC_USAGE_PRIVATE_MM_HEAP | GRALLOC_USAGE_PROTECTED |
-                                                      GRALLOC_USAGE_PRIVATE_CP_BUFFER | GRALLOC_USAGE_PRIVATE_UNCACHED);
+                                                      GRALLOC_USAGE_PRIVATE_UNCACHED);
+                        DEBUG_PRINT_HIGH("ION:secure_mode: nUsage 0x%x",nativeBuffersUsage->nUsage);
                 } else {
                         nativeBuffersUsage->nUsage = (GRALLOC_USAGE_PRIVATE_MM_HEAP |
                                                          GRALLOC_USAGE_PRIVATE_IOMMU_HEAP);
@@ -9021,13 +9022,6 @@ void omx_vdec::append_interlace_extradata(OMX_OTHER_EXTRADATATYPE *extra,
 {
   OMX_STREAMINTERLACEFORMAT *interlace_format;
   OMX_U32 mbaff = 0;
-#if defined(_ANDROID_ICS_) && defined(DISPLAYCAF)
-  OMX_U32 enable = 0;
-  private_handle_t *handle = NULL;
-  handle = (private_handle_t *)native_buffer[buf_index].nativehandle;
-  if(!handle)
-    DEBUG_PRINT_LOW("%s: Native Buffer handle is NULL",__func__);
-#endif
   extra->nSize = OMX_INTERLACE_EXTRADATA_SIZE;
   extra->nVersion.nVersion = OMX_SPEC_VERSION;
   extra->nPortIndex = OMX_CORE_OUTPUT_PORT_INDEX;
@@ -9043,25 +9037,12 @@ void omx_vdec::append_interlace_extradata(OMX_OTHER_EXTRADATATYPE *extra,
     interlace_format->bInterlaceFormat = OMX_FALSE;
     interlace_format->nInterlaceFormats = OMX_InterlaceFrameProgressive;
     drv_ctx.interlace = VDEC_InterlaceFrameProgressive;
-#if defined(_ANDROID_ICS_) && defined(DISPLAYCAF)
-    if(handle)
-    {
-      setMetaData(handle, PP_PARAM_INTERLACED, (void*)&enable);
-    }
-#endif
   }
   else
   {
     interlace_format->bInterlaceFormat = OMX_TRUE;
     interlace_format->nInterlaceFormats = OMX_InterlaceInterleaveFrameTopFieldFirst;
     drv_ctx.interlace = VDEC_InterlaceInterleaveFrameTopFieldFirst;
-#if defined(_ANDROID_ICS_) && defined(DISPLAYCAF)
-    enable = 1;
-    if(handle)
-    {
-      setMetaData(handle, PP_PARAM_INTERLACED, (void*)&enable);
-    }
-#endif
   }
   print_debug_extradata(extra);
 }
